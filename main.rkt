@@ -38,18 +38,18 @@
 (define (build-line key value show-comma is-wrapper)
   (define s (if (and (not is-wrapper) (symbol? key) (string? value)) "\"" ""))
   (define comma (if show-comma "," ""))
-  ;(printf "~a ~a ~a\n" key value (string? key))
+  
   (if (symbol? key)
       (format "\"~a\" : ~a~a~a~a" (symbol->string key) s value s comma)
-      (format "~a" value)
+      (format "~a~a" value comma)
       ))
 
 
 
 (define (hydrate-list the-list payload name indent-level is-last)
 
-  (define open (list (indent indent-level (build-line name (if (hash? payload) "{" "[") #f #t))))
-  (define close (list (indent indent-level (build-line null (if (hash? payload) "}" "]") (not is-last) #t))))
+  (define open (list (list (list name #f) (indent indent-level (build-line name (if (hash? payload) "{" "[") #f #t)))))
+  (define close (list (list (list name #f) (indent indent-level (build-line null (if (hash? payload) "}" "]") (not is-last) #t)))))
 
   (define response open)
   
@@ -62,23 +62,27 @@
        (set! response
              (append
               response
-              (hydrate-list the-list value key (add1 indent-level) (< (add1 k) (hash-count payload)))))]
+               (hydrate-list the-list value key (add1 indent-level) (= (add1 k) (hash-count payload)))))
+       ]
       [else
        (set! response
              (append
               response
               (list
-               (indent (add1 indent-level)
-                       (build-line key value (< (add1 k) (hash-count payload)) #f)))))
+              (cons
+                (list key value)
+                (list
+                 (let ([tmp (indent (add1 indent-level) (build-line key value (< (add1 k) (hash-count payload)) #f))])
+                   (if (> (string-length tmp) 200) (substring tmp 0 200) tmp))
+                 )))))
+       
 
        ]))
 
   
   (set! response (append response close))
   
-  (map (lambda (s) (if (> (string-length s) 200) (substring s 0 200) s)) response)
-
-  
+  response
   )
                      
     
@@ -89,7 +93,7 @@
 
 
 
-(define (populate-panels server panel results path)
+(define (populate-panels server path panel results displayed)
 
   (define result-panel
     (new vertical-panel% [parent panel]
@@ -122,7 +126,6 @@
   
   (thread
    (lambda ()
-     ;(printf "Loading: ~a\n" (string-append "http://" (hash-ref server 'host) ":" (number->string (hash-ref server 'port))))
      (define-values
        (status headers payload)
        (fetch-json server (string-append path ".infinity.json")))
@@ -130,8 +133,9 @@
      (if (empty? payload)
            (send new-list set (list (third status)))
            (let ([list-contents (hydrate-list new-list payload #f 0 #t)])
-             (println list-contents)
-           (send new-list set list-contents))))))
+             ;(printf "~a\n" list-contents)
+             (hash-set! displayed server list-contents)
+             (send new-list set (map second list-contents)))))))
 
 
 
@@ -143,6 +147,10 @@
   (hash-set! stack-frame "publishers-panel" publishers-panel)
   (hash-set! stack-frame "authors-results" (make-hash))
   (hash-set! stack-frame "publishers-results" (make-hash))
+  (hash-set! stack-frame "authors-displayed" (make-hash))
+  (hash-set! stack-frame "publishers-displayed" (make-hash))
+
+
   stack-frame)
 
 
@@ -167,10 +175,10 @@
        [publish-servers (hash-ref (current-environment) 'publishers)])
     
        (for ([server (in-list author-servers)])
-         (populate-panels server authors-panel (hash-ref stack-frame "authors-results") path))
+         (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") (hash-ref stack-frame "authors-displayed") ))
     
        (for ([server (in-list publish-servers)])
-         (populate-panels server publishers-panel (hash-ref stack-frame "publishers-results") path)))
+         (populate-panels server path publishers-panel (hash-ref stack-frame "publishers-results") (hash-ref stack-frame "publishers-displayed") )))
   1)
 
 

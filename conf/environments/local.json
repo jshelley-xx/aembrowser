@@ -1,0 +1,5 @@
+{
+	"name": "localhost",
+	"authors": [{"host": "localhost", "port": 4502, "user": "admin", "password": "admin"}],
+	"publishers": [{"host": "localhost", "port": 4503, "user": "admin", "password": "admin"}]
+}

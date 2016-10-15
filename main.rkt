@@ -163,11 +163,18 @@
 
 
 
-(define (push-path path authors-panel publishers-panel)
+(define (push-path path authors-panel publishers-panel path-stack)
 
   (define stack-frame (make-stack-frame path authors-panel publishers-panel))
+
   (push! (second current-session) stack-frame)
 
+
+  (if (= (send path-stack get-number) 1)
+      (send path-stack set (list path))
+      (send path-stack append path))
+
+  
   (map clear-panel (list authors-panel publishers-panel))
 
   (let*
@@ -193,8 +200,34 @@
  (render-to-html payload 1)
   )
 
+(define results-panel-registry (make-hash))
 
+ 
+(define (show-results-for-path bottom-panel path)
+  (send bottom-panel change-children
+        (lambda (children)
+          (for/list ([chld children]
+                     #:when (equal? (hash-ref results-panel-registry chld "") path))            
+            chld))))
 
+  
+(define (new-results-panel bottom-panel path)
+
+  (define bottom-results-panel
+    (new horizontal-panel%
+         [parent bottom-panel]))
+  
+  (define authors-panel
+    (new vertical-panel%
+         [parent bottom-results-panel]))
+
+  (define publishers-panel
+    (new vertical-panel%
+         [parent bottom-results-panel]))
+
+    (hash-set! results-panel-registry bottom-results-panel path)
+    (values authors-panel publishers-panel)
+  )
 
 (define (go)
   (define environments (load-conf-files "environments"))
@@ -214,23 +247,7 @@
          [min-height 800]))
 
 
-
   
-  (define bottom-results-panel
-    (new horizontal-panel%
-         [parent bottom-panel]))
-  
-
-  
-  
-  (define authors-panel
-    (new vertical-panel%
-         [parent bottom-results-panel]))
-
-  (define publishers-panel
-    (new vertical-panel%
-         [parent bottom-results-panel]))
-
   
 
   (define environment-group-box
@@ -299,7 +316,10 @@
                [new-env (hash-ref environments env-name)]
                [path (send start-at get-value)])
             (start-session new-env)
-            (push-path path authors-panel publishers-panel)
+            (let-values
+                ([(authors-panel publishers-panel) (new-results-panel bottom-panel path)])
+              (show-results-for-path bottom-panel path)
+              (push-path path authors-panel publishers-panel path-stack))
             
             ))])
   

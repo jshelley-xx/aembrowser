@@ -212,13 +212,31 @@
     (new horizontal-panel%
          [parent frame]
          [min-height 800]))
+
+
+
+  
+  (define bottom-results-panel
+    (new horizontal-panel%
+         [parent bottom-panel]))
+  
+
+  
+  
+  (define authors-panel
+    (new vertical-panel%
+         [parent bottom-results-panel]))
+
+  (define publishers-panel
+    (new vertical-panel%
+         [parent bottom-results-panel]))
+
   
 
   (define environment-group-box
     (new group-box-panel%
          [parent top-panel]
          [label "Environment"]))
-
 
 
   (define env-panel
@@ -240,19 +258,26 @@
     (new horizontal-panel%
          [parent env-panel]))
 
+  (define path-stack-panel
+    (new vertical-panel%
+         [parent top-panel]))
+  
+  (define path-stack
+    (new list-box%
+         [label "Path Stack"]
+         [style '(multiple vertical-label)]
+         [min-width 400]
+         [choices (list "Start Session to build path stack...")]	 
+         [parent path-stack-panel]))
+
+
+  
   (define notes-panel
     (new vertical-panel% [parent top-panel]
          [alignment '(left top)]))
   
 
   
-  (define authors-panel
-    (new vertical-panel%
-         [parent bottom-panel]))
-
-  (define publishers-panel
-    (new vertical-panel%
-         [parent bottom-panel]))
   
   
   
@@ -262,7 +287,7 @@
          [parent start-at-panel]
          [label "Start at: "]
          [init-value "/content/geometrixx/en/products/triangle/jcr:content"]
-         [min-width 800]
+         [min-width 600]
          [stretchable-width #f]))
   
   (new button% [parent start-at-panel]
@@ -279,10 +304,13 @@
             ))])
   
 
+
+
   
   (new text-field%
        [parent notes-panel]
        [label "Notes: "]
+       [min-width 400]
        [style '(multiple vertical-label)])
   
   

@@ -1,0 +1,33 @@
+#lang racket
+
+(require typed-stack)
+
+
+(provide make-stack-frame start-session current-environment push-stack-frame)
+
+(define (make-stack-frame path authors-panel publishers-panel)
+  (define stack-frame (make-hash))
+  (hash-set! stack-frame "path" path)
+  (hash-set! stack-frame "authors-panel" authors-panel)
+  (hash-set! stack-frame "publishers-panel" publishers-panel)
+  (hash-set! stack-frame "authors-results" (make-hash))
+  (hash-set! stack-frame "publishers-results" (make-hash))
+  (hash-set! stack-frame "authors-displayed" (make-hash))
+  (hash-set! stack-frame "publishers-displayed" (make-hash))
+  
+  stack-frame)
+
+
+
+
+(define current-session '())
+
+(define (start-session environment)
+  (set! current-session (list environment (make-stack))))
+
+
+(define (current-environment)
+  (first current-session))
+
+(define (push-stack-frame frame)
+  (push! (second current-session)))

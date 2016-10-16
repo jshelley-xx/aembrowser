@@ -4,45 +4,15 @@
          json
          "conf.rkt"
          "net.rkt"
+         "session.rkt"
+         "formatting.rkt"
          typed-stack
          )
 
 
   
 
-(define (get-author)
-  (define environments (load-conf-files "environments"))
-  (hash-ref environments "local")
-  (first (hash-ref (hash-ref environments "local") 'authors)))
-  
 
-(define (render-to-html data schema)
-  (string-append
-   "<html><head><title>results</title></head><body>"
-   (hash-ref data 'sling:resourceType)
-   "</body></html>")
-  )
-
-
-(define current-session '())
-(define (start-session environment)
-  (set! current-session (list environment (make-stack))))
-
-
-(define (current-environment)
-  (first current-session))
-
-(define (indent indent-level s)
-  (string-append (make-string (* 4 indent-level) #\ ) s))
-
-(define (build-line key value show-comma is-wrapper)
-  (define s (if (and (not is-wrapper) (symbol? key) (string? value)) "\"" ""))
-  (define comma (if show-comma "," ""))
-  
-  (if (symbol? key)
-      (format "\"~a\" : ~a~a~a~a" (symbol->string key) s value s comma)
-      (format "~a~a" value comma)
-      ))
 
 
 
@@ -93,7 +63,7 @@
 
 
 
-(define (populate-panels server path panel results displayed)
+(define (populate-panels server path panel results displayed path-stack)
 
   (define result-panel
     (new vertical-panel% [parent panel]
@@ -116,13 +86,58 @@
           (string-append "http://" (hash-ref server 'host) ":" (number->string (hash-ref server 'port)) path)]
          [min-width 600]
          [stretchable-width #f]))
+
+
+  (define list-context-menu
+    (new popup-menu%	 
+         [title "Options"]))
+  
+
+
+  
   
   (define new-list
     (new list-box%
          [parent result-panel]
          [choices (list "Loading...")]
          [label #f]
-         [style '(multiple vertical-label)]))
+         [style '(single)]
+         [callback (lambda (cmp evt)
+                     (let-values ([(mouse-coords modifier-state) (get-current-mouse-state)])
+                       ;(printf "~a ~a\n\n" (send mouse-coords get-y) (send cmp get-y))
+                       (send
+                        (send cmp get-top-level-window)
+                             popup-menu
+                             list-context-menu
+                             (send mouse-coords get-x)
+                             (- (send mouse-coords get-y) (send cmp get-y)))))]))
+  
+  
+
+
+    (define push-path-option
+    (new menu-item%
+         [parent list-context-menu]
+         [label "Go here!"]
+         [callback
+          (lambda (cmp evt)
+            (let*
+                ([selected-index (send new-list get-selection)]
+                 [next-path (second (first (list-ref (hash-ref displayed server) selected-index)))]
+                 [bottom-panel (send panel get-parent)])
+              (printf "Pushing path: ~a ~a \n\n" selected-index next-path)
+              (let-values
+                  ([(authors-panel publishers-panel) (new-results-panel bottom-panel next-path)])
+                (show-results-for-path bottom-panel next-path)
+                (push-path next-path authors-panel publishers-panel path-stack)))
+            
+
+            )]
+         ))
+
+    
+
+    
   
   (thread
    (lambda ()
@@ -140,18 +155,9 @@
 
 
 
-(define (make-stack-frame path authors-panel publishers-panel)
-  (define stack-frame (make-hash))
-  (hash-set! stack-frame "path" path)
-  (hash-set! stack-frame "authors-panel" authors-panel)
-  (hash-set! stack-frame "publishers-panel" publishers-panel)
-  (hash-set! stack-frame "authors-results" (make-hash))
-  (hash-set! stack-frame "publishers-results" (make-hash))
-  (hash-set! stack-frame "authors-displayed" (make-hash))
-  (hash-set! stack-frame "publishers-displayed" (make-hash))
 
 
-  stack-frame)
+
 
 
 (define (clear-panel panel)
@@ -167,10 +173,10 @@
 
   (define stack-frame (make-stack-frame path authors-panel publishers-panel))
 
-  (push! (second current-session) stack-frame)
+  (push-stack-frame stack-frame)
 
-
-  (if (= (send path-stack get-number) 1)
+  (println (send path-stack get-data 0))
+  (if (and (= (send path-stack get-number) 1) (not (equal? (send path-stack get-data 0) "Start Session to build path stack...")))
       (send path-stack set (list path))
       (send path-stack append path))
 
@@ -182,25 +188,23 @@
        [publish-servers (hash-ref (current-environment) 'publishers)])
     
        (for ([server (in-list author-servers)])
-         (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") (hash-ref stack-frame "authors-displayed") ))
+         (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") (hash-ref stack-frame "authors-displayed") path-stack))
     
        (for ([server (in-list publish-servers)])
-         (populate-panels server path publishers-panel (hash-ref stack-frame "publishers-results") (hash-ref stack-frame "publishers-displayed") )))
+         (populate-panels server path publishers-panel (hash-ref stack-frame "publishers-results") (hash-ref stack-frame "publishers-displayed") path-stack)))
   1)
 
 
   
 
 
-(define (test)
-  (define-values (status headers payload)
-    (fetch-json (get-author) "/content/geometrixx/en/products/triangle/jcr:content.infinity.json"))
-
-  ;(define current-response (open-url (open-input-string (render-to-html payload))))
- (render-to-html payload 1)
-  )
 
 (define results-panel-registry (make-hash))
+
+(define (get-results-panel path)
+  (for ([(k v) results-panel-registry]
+        #:when (equal? v path)) k))
+  
 
  
 (define (show-results-for-path bottom-panel path)

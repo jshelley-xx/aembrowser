@@ -3,7 +3,7 @@
 (require typed-stack)
 
 
-(provide make-stack-frame start-session current-environment push-stack-frame)
+(provide make-stack-frame start-session current-environment push-stack-frame set-current-lens get-current-lens)
 
 (define (make-stack-frame path authors-panel publishers-panel)
   (define stack-frame (make-hash))
@@ -17,7 +17,7 @@
 
 
 
-
+(define current-lens '())
 (define current-session '())
 
 (define (start-session environment)
@@ -29,3 +29,10 @@
 
 (define (push-stack-frame frame)
   (push! (second current-session) frame))
+
+
+(define (set-current-lens lens)
+  (set! current-lens lens))
+
+(define (get-current-lens)
+  current-lens)

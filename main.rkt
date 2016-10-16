@@ -16,23 +16,33 @@
 
 
 
-(define (hydrate-list the-list payload name indent-level is-last)
+(define (hydrate-list the-list payload name indent-level is-last lens)
 
   (define open (list (list (list name #f) (indent indent-level (build-line name (if (hash? payload) "{" "[") #f #t)))))
   (define close (list (list (list name #f) (indent indent-level (build-line null (if (hash? payload) "}" "]") (not is-last) #t)))))
 
-  (define response open)
+  (define used-payload (make-hash))
+  (for ([key (hash-keys payload)])
+    (when (send lens include-field key (hash-ref payload key))
+        (hash-set! used-payload key (hash-ref payload key))))
+    
+
   
+  (define response open)
+
+
   (for ([k (in-naturals)]
-        [key (sort (hash-keys payload) symbol<?)])
-    (define value (hash-ref payload key))
+        [key (sort (hash-keys used-payload) symbol<?)])
+    (define value (hash-ref used-payload key))
+
+    
 
     (cond
       [(hash? value)
        (set! response
              (append
               response
-               (hydrate-list the-list value key (add1 indent-level) (= (add1 k) (hash-count payload)))))
+               (hydrate-list the-list value key (add1 indent-level) (= (add1 k) (hash-count used-payload)) lens)))
        ]
       [else
        (set! response
@@ -42,11 +52,9 @@
               (cons
                 (list key value)
                 (list
-                 (let ([tmp (indent (add1 indent-level) (build-line key value (< (add1 k) (hash-count payload)) #f))])
+                 (let ([tmp (indent (add1 indent-level) (build-line key value (< (add1 k) (hash-count used-payload)) #f))])
                    (if (> (string-length tmp) 200) (substring tmp 0 200) tmp))
                  )))))
-       
-
        ]))
 
   
@@ -146,7 +154,7 @@
            (send new-list set (list (third status)))
            (let ()
              (send new-list clear)
-             (for ([row (hydrate-list new-list payload #f 0 #t)])
+             (for ([row (hydrate-list new-list payload #f 0 #t (get-current-lens))])
                (send new-list append (second row) (first row))))))))
 
 
@@ -227,7 +235,8 @@
   )
 
 (define (go)
-  (define environments (load-conf-files "environments"))
+  (define environments (load-environments))
+  (define lenses (load-lenses))
   
   (define frame
     (new frame%
@@ -258,14 +267,24 @@
          [parent environment-group-box]
          [alignment '(left top)]))
 
+  (define environment-row
+    (new horizontal-panel%
+         [parent env-panel]))
 
-
+  
 
   (define environment-dropdown
     (new choice%
-         [parent env-panel]
+         [parent environment-row]
          [label "Environment: "]
          [choices (hash-keys environments)]))
+
+
+  (define lens-dropdown
+    (new choice%
+         [parent environment-row]
+         [label "Lens: "]
+         [choices (hash-keys lenses)]))
   
   
   (define start-at-panel
@@ -315,8 +334,11 @@
           (let*
               ([env-name (send environment-dropdown get-string-selection)]
                [new-env (hash-ref environments env-name)]
+               [lens-name (send lens-dropdown get-string-selection)]
+               [lens (hash-ref lenses lens-name)]
                [path (send start-at get-value)])
             (start-session new-env)
+            (set-current-lens lens)
             (let-values
                 ([(authors-panel publishers-panel) (new-results-panel bottom-panel path)])
               (show-results-for-path bottom-panel path)

@@ -1,7 +1,8 @@
 #lang racket
-(require json)
 
-(provide load-conf-files)
+(require json "lens/main.rkt")
+
+(provide load-conf-files load-environments load-lenses)
 
 (define (create-if-needed path)
   (unless (directory-exists? path)
@@ -48,3 +49,20 @@
         response
         (path->string (path-replace-extension (file-name-from-path f) #"")) (read-json in)))))
   response)
+
+
+
+
+(define (load-environments)
+  (load-conf-files "environments"))
+
+
+
+
+(define (load-lenses)
+  (define lense-files (load-conf-files "lenses"))
+  (define lenses (make-hash))
+  (for ([(k v) lense-files])
+    (hash-set! lenses k (new lens% [json v])))
+  lenses
+  )

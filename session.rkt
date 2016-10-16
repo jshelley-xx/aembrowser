@@ -12,8 +12,6 @@
   (hash-set! stack-frame "publishers-panel" publishers-panel)
   (hash-set! stack-frame "authors-results" (make-hash))
   (hash-set! stack-frame "publishers-results" (make-hash))
-  (hash-set! stack-frame "authors-displayed" (make-hash))
-  (hash-set! stack-frame "publishers-displayed" (make-hash))
   
   stack-frame)
 
@@ -30,4 +28,4 @@
   (first current-session))
 
 (define (push-stack-frame frame)
-  (push! (second current-session)))
+  (push! (second current-session) frame))

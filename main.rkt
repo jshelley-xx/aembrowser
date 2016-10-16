@@ -63,12 +63,12 @@
 
 
 
-(define (populate-panels server path panel results displayed path-stack)
+(define (populate-panels server path panel results path-stack)
 
   (define result-panel
     (new vertical-panel% [parent panel]
          [alignment '(left top)]))
-
+  
   (define info-bar
     (new vertical-panel%
          [parent result-panel]
@@ -76,8 +76,8 @@
          [min-height 10]
          [stretchable-height #f]
          ))
-
-
+  
+  
   (define start-at
     (new text-field%
          [parent info-bar]
@@ -102,42 +102,39 @@
          [choices (list "Loading...")]
          [label #f]
          [style '(single)]
-         [callback (lambda (cmp evt)
-                     (let-values ([(mouse-coords modifier-state) (get-current-mouse-state)])
-                       ;(printf "~a ~a\n\n" (send mouse-coords get-y) (send cmp get-y))
-                       (send
-                        (send cmp get-top-level-window)
-                             popup-menu
-                             list-context-menu
-                             (send mouse-coords get-x)
-                             (- (send mouse-coords get-y) (send cmp get-y)))))]))
+         [callback
+          (lambda (cmp evt)
+            (let-values ([(mouse-coords modifier-state) (get-current-mouse-state)])
+              (send
+               (send cmp get-top-level-window)
+               popup-menu
+               list-context-menu
+               (send mouse-coords get-x)
+               (- (send mouse-coords get-y) (send cmp get-y)))))]))
   
   
 
 
     (define push-path-option
-    (new menu-item%
+      (new menu-item%
          [parent list-context-menu]
          [label "Go here!"]
          [callback
           (lambda (cmp evt)
             (let*
                 ([selected-index (send new-list get-selection)]
-                 [next-path (second (first (list-ref (hash-ref displayed server) selected-index)))]
+                 [next-path (second (send new-list get-data selected-index))]
                  [bottom-panel (send panel get-parent)])
-              (printf "Pushing path: ~a ~a \n\n" selected-index next-path)
+              
               (let-values
                   ([(authors-panel publishers-panel) (new-results-panel bottom-panel next-path)])
                 (show-results-for-path bottom-panel next-path)
-                (push-path next-path authors-panel publishers-panel path-stack)))
+                (push-path next-path authors-panel publishers-panel path-stack))))
             
 
-            )]
+            ]
          ))
 
-    
-
-    
   
   (thread
    (lambda ()
@@ -147,10 +144,10 @@
      (hash-set! results server (list status headers payload))
      (if (empty? payload)
            (send new-list set (list (third status)))
-           (let ([list-contents (hydrate-list new-list payload #f 0 #t)])
-             ;(printf "~a\n" list-contents)
-             (hash-set! displayed server list-contents)
-             (send new-list set (map second list-contents)))))))
+           (let ()
+             (send new-list clear)
+             (for ([row (hydrate-list new-list payload #f 0 #t)])
+               (send new-list append (second row) (first row))))))))
 
 
 
@@ -175,8 +172,8 @@
 
   (push-stack-frame stack-frame)
 
-  (println (send path-stack get-data 0))
-  (if (and (= (send path-stack get-number) 1) (not (equal? (send path-stack get-data 0) "Start Session to build path stack...")))
+  
+  (if (and (= (send path-stack get-number) 1) (equal? (send path-stack get-string 0) "Start Session to build path stack..."))
       (send path-stack set (list path))
       (send path-stack append path))
 
@@ -188,10 +185,10 @@
        [publish-servers (hash-ref (current-environment) 'publishers)])
     
        (for ([server (in-list author-servers)])
-         (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") (hash-ref stack-frame "authors-displayed") path-stack))
+         (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") path-stack))
     
        (for ([server (in-list publish-servers)])
-         (populate-panels server path publishers-panel (hash-ref stack-frame "publishers-results") (hash-ref stack-frame "publishers-displayed") path-stack)))
+         (populate-panels server path publishers-panel (hash-ref stack-frame "publishers-results") path-stack)))
   1)
 
 

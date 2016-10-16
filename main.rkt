@@ -143,6 +143,27 @@
             ]
          ))
 
+
+      (define copy-contents-option
+      (new menu-item%
+         [parent list-context-menu]
+         [label "Copy to Clipboard!"]
+         [callback
+          (lambda (cmp evt)
+            (let
+                ([list-values 
+                  (for/list ([k (in-range 0 (send new-list get-number))])
+                    (send new-list get-string k)
+                    )])
+              (send the-clipboard set-clipboard-string (string-join list-values "\r\n") 0)
+            ))
+            
+
+            ]
+         ))
+
+
+  
   
   (thread
    (lambda ()

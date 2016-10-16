@@ -1,0 +1,34 @@
+{
+	"auto-add-jcrcontent": ["/content", "/etc"],
+	"suppress-fields": [ 
+			"jcr:createdBy", 
+			"jcr:created", 
+			"jcr:lastModified", 
+			"jcr:lastModifiedBy",
+			"jcr:baseVersion",
+			"dam:extracted",
+			"jcr:versionHistory",
+			"jcr:predecessors",
+			"jcr:isCheckedOut",
+			"dam:Physicalwidthininches",
+			"dam:Fileformat",
+			"dam:Progressive",
+			"tiff:ImageLength",
+			"dam:Bitsperpixel",
+			"dam:Physicalheightindpi",
+			"dam:Numberofimages",
+			"dam:Numberoftextualcomments",
+			"dc:modified",
+			"tiff:ImageWidth",
+			"jcr:uuid" ,
+			"jcr:mixinTypes",
+			"renditions",
+			"cq:lastModified", 
+			"cq:lastModifiedBy", 
+			"cq:tags", 
+			"cq:template", 
+			"image", 
+			":jcr:data" ]
+}
+
+

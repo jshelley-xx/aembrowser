@@ -1,1 +1,0 @@
-("6.6" ("f9789067c711ce6c64149572885e69f7ef9e3bb2" . "b2eae9350803338a749268cbfb760dbe692a8590") (collects #"errortrace" #"errortrace-key.rkt") (collects #"json" #"main.rkt") (collects #"net" #"base64.rkt") (collects #"net" #"head.rkt") (collects #"net" #"http-client.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))

@@ -124,7 +124,7 @@
             (let*
                 ([selected-index (send new-list get-selection)]
                  [next-path (second (send new-list get-data selected-index))]
-                 [bottom-panel (send panel get-parent)])
+                 [bottom-panel (send (send panel get-parent) get-parent)])
               
               (let-values
                   ([(authors-panel publishers-panel) (new-results-panel bottom-panel next-path)])
@@ -197,19 +197,27 @@
 
 
 (define results-panel-registry (make-hash))
-
-(define (get-results-panel path)
-  (for ([(k v) results-panel-registry]
-        #:when (equal? v path)) k))
-  
-
  
 (define (show-results-for-path bottom-panel path)
-  (send bottom-panel change-children
-        (lambda (children)
-          (for/list ([chld children]
-                     #:when (equal? (hash-ref results-panel-registry chld "") path))            
-            chld))))
+  (printf "showing results for ~a ~a\n" path (length (send bottom-panel get-children)))
+  (for ([(k v) results-panel-registry]
+        #:when (member k (send bottom-panel get-children)))
+    (send (send k get-parent) delete-child k))
+  
+  (for ([(k v) results-panel-registry]
+    #:when (equal? v path))
+    (send bottom-panel add-child k))
+  
+  ;(send (send bottom-panel get-top-level-window) refresh)
+  )
+
+  
+;  (send bottom-panel change-children
+;        (lambda (children)
+;          (printf "children: ~a\n" (length children))
+;          (for/list ([chld children]
+;                     #:when (equal? (hash-ref results-panel-registry chld "") path))            
+;            chld))))
 
   
 (define (new-results-panel bottom-panel path)
@@ -283,10 +291,14 @@
   (define path-stack
     (new list-box%
          [label "Path Stack"]
-         [style '(multiple vertical-label)]
+         [style '(single vertical-label)]
          [min-width 400]
          [choices (list "Start Session to build path stack...")]	 
-         [parent path-stack-panel]))
+         [parent path-stack-panel]
+         [callback
+          (lambda (cmp event)
+              (show-results-for-path bottom-panel (send path-stack get-string-selection))
+            )]))
 
 
   

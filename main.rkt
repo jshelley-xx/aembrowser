@@ -199,25 +199,13 @@
 (define results-panel-registry (make-hash))
  
 (define (show-results-for-path bottom-panel path)
-  (printf "showing results for ~a ~a\n" path (length (send bottom-panel get-children)))
-  (for ([(k v) results-panel-registry]
-        #:when (member k (send bottom-panel get-children)))
-    (send (send k get-parent) delete-child k))
-  
+  (send bottom-panel change-children (lambda (children) (list)))
   (for ([(k v) results-panel-registry]
     #:when (equal? v path))
-    (send bottom-panel add-child k))
-  
-  ;(send (send bottom-panel get-top-level-window) refresh)
-  )
+    (send bottom-panel add-child k)))
 
   
-;  (send bottom-panel change-children
-;        (lambda (children)
-;          (printf "children: ~a\n" (length children))
-;          (for/list ([chld children]
-;                     #:when (equal? (hash-ref results-panel-registry chld "") path))            
-;            chld))))
+
 
   
 (define (new-results-panel bottom-panel path)

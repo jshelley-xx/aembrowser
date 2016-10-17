@@ -226,22 +226,30 @@
   (push-stack-frame stack-frame)
 
   
-  (if (and (= (send path-stack get-number) 1) (equal? (send path-stack get-string 0) "Start Session to build path stack..."))
-      (send path-stack set (list path))
-      (send path-stack append path))
+  (unless 
+   (for/or ([k (in-range 0 (send path-stack get-number))]
+            #:when (equal? (send path-stack get-string k) path))
+     (send path-stack set-selection k)
+     #t)
+    (let ()
+      (if (and (= (send path-stack get-number) 1) (equal? (send path-stack get-string 0) "Start Session to build path stack..."))
+         (send path-stack set (list path))
+         (send path-stack append path))
 
-  
-  (map clear-panel (list authors-panel publishers-panel))
-
-  (let*
-      ([author-servers (hash-ref (current-environment) 'authors)]
-       [publish-servers (hash-ref (current-environment) 'publishers)])
-    
-       (for ([server (in-list author-servers)])
-         (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") path-stack))
-    
-       (for ([server (in-list publish-servers)])
-         (populate-panels server path publishers-panel (hash-ref stack-frame "publishers-results") path-stack)))
+      (send path-stack set-selection (sub1 (send path-stack get-number)))
+     
+     
+      (map clear-panel (list authors-panel publishers-panel))
+     
+      (let*
+          ([author-servers (hash-ref (current-environment) 'authors)]
+           [publish-servers (hash-ref (current-environment) 'publishers)])
+        
+        (for ([server (in-list author-servers)])
+          (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") path-stack))
+        
+        (for ([server (in-list publish-servers)])
+          (populate-panels server path publishers-panel (hash-ref stack-frame "publishers-results") path-stack)))))
   1)
 
 
@@ -262,22 +270,27 @@
 
   
 (define (new-results-panel bottom-panel path)
-
-  (define bottom-results-panel
-    (new horizontal-panel%
-         [parent bottom-panel]))
+  (define maybe-exists
+     (for/or ([(k v) results-panel-registry]
+              #:when (equal? v path)) k))
   
-  (define authors-panel
-    (new vertical-panel%
-         [parent bottom-results-panel]))
-
-  (define publishers-panel
-    (new vertical-panel%
-         [parent bottom-results-panel]))
-
-    (hash-set! results-panel-registry bottom-results-panel path)
-    (values authors-panel publishers-panel)
-  )
+  (if maybe-exists
+      (values (first (send maybe-exists get-children)) (second (send maybe-exists get-children)))
+      (let ()
+        (define bottom-results-panel
+          (new horizontal-panel%
+               [parent bottom-panel]))
+        
+        (define authors-panel
+          (new vertical-panel%
+               [parent bottom-results-panel]))
+        
+        (define publishers-panel
+          (new vertical-panel%
+               [parent bottom-results-panel]))
+        
+        (hash-set! results-panel-registry bottom-results-panel path)
+        (values authors-panel publishers-panel))))
 
 (define (go)
   (define environments (load-environments))

@@ -18,10 +18,11 @@
 
 
 (define current-lens '())
-(define current-session '())
+(define current-session '(null))
 
 (define (start-session environment)
-  (set! current-session (list environment (make-stack))))
+  (unless (eq? environment (current-environment))
+    (set! current-session (list environment (make-stack)))))
 
 
 (define (current-environment)

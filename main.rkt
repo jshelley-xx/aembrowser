@@ -242,8 +242,8 @@
       (map clear-panel (list authors-panel publishers-panel))
      
       (let*
-          ([author-servers (hash-ref (current-environment) 'authors)]
-           [publish-servers (hash-ref (current-environment) 'publishers)])
+          ([author-servers (send (current-environment) get-authors)]
+           [publish-servers (send (current-environment) get-publishers)])
         
         (for ([server (in-list author-servers)])
           (populate-panels server path authors-panel (hash-ref stack-frame "authors-results") path-stack))
@@ -292,8 +292,24 @@
         (hash-set! results-panel-registry bottom-results-panel path)
         (values authors-panel publishers-panel))))
 
+
+(define (select-default-environment environments)
+  (unless
+      (for/or ([(k v) environments]
+             #:when (send v get-use-by-default))
+        (start-session v)
+        #t)
+    (for/or ([(k v) environments])
+      (start-session v)
+      #t)
+    ))
+
+
 (define (go)
   (define environments (load-environments))
+  (select-default-environment environments)
+
+  
   (define lenses (load-lenses))
   
   (define frame
@@ -335,7 +351,15 @@
     (new choice%
          [parent environment-row]
          [label "Environment: "]
-         [choices (hash-keys environments)]))
+         [choices (hash-keys environments)]
+         [callback
+          (lambda (cmp event)
+            (let*
+              ([env-name (send environment-dropdown get-string-selection)]
+               [new-env (hash-ref environments env-name)])
+              (start-session new-env)
+            ))]
+         ))
 
 
   (define lens-dropdown
@@ -386,23 +410,20 @@
          [stretchable-width #f]))
   
   (new button% [parent start-at-panel]
-       [label "Start Session"]
+       [label "Navigate to Path"]
        [callback
         (lambda (button event)
           (let*
-              ([env-name (send environment-dropdown get-string-selection)]
-               [new-env (hash-ref environments env-name)]
-               [lens-name (send lens-dropdown get-string-selection)]
+              ([lens-name (send lens-dropdown get-string-selection)]
                [lens (hash-ref lenses lens-name)]
                [path (send start-at get-value)])
-            (start-session new-env)
-            (set-current-lens lens)
-            (let-values
-                ([(authors-panel publishers-panel) (new-results-panel bottom-panel path)])
-              (show-results-for-path bottom-panel path)
-              (push-path path authors-panel publishers-panel path-stack))
-            
-            ))])
+          (set-current-lens lens)
+          (let-values
+              ([(authors-panel publishers-panel) (new-results-panel bottom-panel path)])
+            (show-results-for-path bottom-panel path)
+            (push-path path authors-panel publishers-panel path-stack))
+          
+          ))])
   
 
 

@@ -1,6 +1,8 @@
 #lang racket
 
-(require json "lens/main.rkt")
+(require json "lens/main.rkt"
+         "environments/main.rkt"
+         )
 
 (provide load-conf-files load-environments load-lenses)
 
@@ -54,7 +56,12 @@
 
 
 (define (load-environments)
-  (load-conf-files "environments"))
+  (define conf-files (load-conf-files "environments"))
+  (define environments (make-hash))
+  (for ([(k v) conf-files])
+    (hash-set! environments k (new environment% [json v])))
+  environments)
+
 
 
 

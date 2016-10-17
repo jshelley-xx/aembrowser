@@ -143,11 +143,17 @@
             ]
          ))
 
-
-      (define copy-contents-option
-      (new menu-item%
+  (define copy-submenu
+      (new menu%
          [parent list-context-menu]
-         [label "Copy to Clipboard!"]
+         [label "Copy"]
+         ))
+
+
+      (define copy-all-contents-option
+      (new menu-item%
+         [parent copy-submenu]
+         [label "Copy All"]
          [callback
           (lambda (cmp evt)
             (let
@@ -156,11 +162,29 @@
                     (send new-list get-string k)
                     )])
               (send the-clipboard set-clipboard-string (string-join list-values "\r\n") 0)
-            ))
-            
-
-            ]
+            ))]
          ))
+
+      (define copy-name-option
+      (new menu-item%
+         [parent copy-submenu]
+         [label "Copy Name"]
+         [callback
+          (lambda (cmp evt)
+              (send the-clipboard set-clipboard-string (symbol->string (first (send new-list get-data (send new-list get-selection)))) 0)
+            )]
+         ))
+
+      (define copy-value-option
+      (new menu-item%
+         [parent copy-submenu]
+         [label "Copy Value"]
+         [callback
+          (lambda (cmp evt)
+              (send the-clipboard set-clipboard-string (second (send new-list get-data (send new-list get-selection))) 0)
+            )]
+         ))
+
 
 
   

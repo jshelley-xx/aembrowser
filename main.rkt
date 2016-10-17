@@ -380,12 +380,6 @@
 
 
 
-  (define lens-dropdown
-    (new choice%
-         [parent environment-row]
-         [label "Lens: "]
-         [choices (hash-keys lenses)]))
-  
   
   (define start-at-panel
     (new horizontal-panel%
@@ -422,7 +416,7 @@
   (define start-at
     (new text-field%
          [parent start-at-panel]
-         [label "Start at: "]
+         [label "Path: "]
          [init-value ""]
          [min-width 600]
          [stretchable-width #f]))
@@ -438,11 +432,17 @@
               ([env-name (send environment-dropdown get-string-selection)]
                [new-env (hash-ref environments env-name)])
                (new-session new-env start-at path-stack bottom-panel))
-              
-              
             )]
          ))
 
+  (define lens-dropdown
+    (new choice%
+         [parent environment-row]
+         [label "Lens: "]
+         [choices (hash-keys lenses)]))
+  
+
+  
   
   (new-session (select-default-environment environments) start-at path-stack bottom-panel)
   

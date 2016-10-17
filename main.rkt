@@ -21,24 +21,42 @@
   (define open (list (list (list name #f) (indent indent-level (build-line name (if (hash? payload) "{" "[") #f #t)))))
   (define close (list (list (list name #f) (indent indent-level (build-line null (if (hash? payload) "}" "]") (not is-last) #t)))))
 
-  (define used-payload (make-hash))
-  (for ([key (hash-keys payload)])
-    (when (send lens include-field key (hash-ref payload key))
-        (hash-set! used-payload key (hash-ref payload key))))
+  (define response open)
+
+  (define used-payload '())
+  (when (hash? payload)
+    (set! used-payload (make-hash))
+    (for ([key (hash-keys payload)])
+      (when (send lens include-field key (hash-ref payload key))
+        (hash-set! used-payload key (hash-ref payload key)))))
+
+  (when (list? payload) 
+    (set! used-payload payload))
     
 
   
-  (define response open)
 
 
   (for ([k (in-naturals)]
-        [key (sort (hash-keys used-payload) symbol<?)])
-    (define value (hash-ref used-payload key))
+        [key (if (hash? used-payload)
+                 (sort (hash-keys used-payload) symbol<?)
+                 (sort used-payload string<?))])
+
+    (define value (if (hash? used-payload)
+                      (hash-ref used-payload key)
+                      (list-ref used-payload k)
+                      ))
 
     
 
     (cond
       [(hash? value)
+       (set! response
+             (append
+              response
+               (hydrate-list the-list value key (add1 indent-level) (= (add1 k) (hash-count used-payload)) lens)))
+       ]
+      [(list? value)
        (set! response
              (append
               response
@@ -52,7 +70,12 @@
               (cons
                 (list key value)
                 (list
-                 (let ([tmp (indent (add1 indent-level) (build-line key value (< (add1 k) (hash-count used-payload)) #f))])
+                 (let
+                     ([tmp
+                       (indent
+                        (add1 indent-level)
+                        (build-line key value
+                                    (< (add1 k) (if (hash? used-payload) (hash-count used-payload) (length used-payload))) #f))])
                    (if (> (string-length tmp) 200) (substring tmp 0 200) tmp))
                  )))))
        ]))

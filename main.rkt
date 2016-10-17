@@ -405,7 +405,7 @@
     (new text-field%
          [parent start-at-panel]
          [label "Start at: "]
-         [init-value "/content/geometrixx/en/products/triangle/jcr:content"]
+         [init-value (send (current-environment) get-initial-path)]
          [min-width 600]
          [stretchable-width #f]))
   

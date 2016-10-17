@@ -297,17 +297,25 @@
   (unless
       (for/or ([(k v) environments]
              #:when (send v get-use-by-default))
-        (start-session v)
-        #t)
+        v)
     (for/or ([(k v) environments])
-      (start-session v)
-      #t)
+      v)
     ))
+
+
+
+(define (new-session environment go-box path-stack bottom-panel)
+  (start-session environment)
+  (send go-box set-value (send environment get-initial-path))
+  (send path-stack clear)
+  (clear-panel bottom-panel)
+
+  )
 
 
 (define (go)
   (define environments (load-environments))
-  (select-default-environment environments)
+  
 
   
   (define lenses (load-lenses))
@@ -347,19 +355,6 @@
 
   
 
-  (define environment-dropdown
-    (new choice%
-         [parent environment-row]
-         [label "Environment: "]
-         [choices (hash-keys environments)]
-         [callback
-          (lambda (cmp event)
-            (let*
-              ([env-name (send environment-dropdown get-string-selection)]
-               [new-env (hash-ref environments env-name)])
-              (start-session new-env)
-            ))]
-         ))
 
 
   (define lens-dropdown
@@ -405,9 +400,28 @@
     (new text-field%
          [parent start-at-panel]
          [label "Start at: "]
-         [init-value (send (current-environment) get-initial-path)]
+         [init-value ""]
          [min-width 600]
          [stretchable-width #f]))
+
+  (define environment-dropdown
+    (new choice%
+         [parent environment-row]
+         [label "Environment: "]
+         [choices (hash-keys environments)]
+         [callback
+          (lambda (cmp event)
+            (let*
+              ([env-name (send environment-dropdown get-string-selection)]
+               [new-env (hash-ref environments env-name)])
+               (new-session new-env start-at path-stack bottom-panel))
+              
+              
+            )]
+         ))
+
+  
+  (new-session (select-default-environment environments) start-at path-stack bottom-panel)
   
   (new button% [parent start-at-panel]
        [label "Navigate to Path"]

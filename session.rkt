@@ -22,7 +22,8 @@
 
 (define (start-session environment)
   (unless (eq? environment (current-environment))
-    (set! current-session (list environment (make-stack)))))
+    (set! current-session (list environment (make-stack))))
+  current-session)
 
 
 (define (current-environment)

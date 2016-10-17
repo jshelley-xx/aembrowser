@@ -16,15 +16,16 @@
   (with-handlers ([
                    (lambda (v) #t)
                    (lambda (exn) (values (list "fail" "-1" "Unable to contact server!" exn) null null))])
-  (define-values (status headers in) 
-    (http-sendrecv
-     (hash-ref server 'host)
-     path
-     #:port (hash-ref server 'port)
-     #:headers (list
-                "Content-Type: application/json"
-                "Accept: application/json"
-                (make-auth-header
-                 (hash-ref server 'user )
-                 (hash-ref server 'password)))))
-  (values (string-split (bytes->string/utf-8 status) " ") headers (read-json in))))
+    ;(printf "fetching ~a from ~a\n" path server)
+    (define-values (status headers in) 
+      (http-sendrecv
+       (hash-ref server 'host)
+       path
+       #:port (hash-ref server 'port)
+       #:headers (list
+                  "Content-Type: application/json"
+                  "Accept: application/json"
+                  (make-auth-header
+                   (hash-ref server 'user )
+                   (hash-ref server 'password)))))
+    (values (string-split (bytes->string/utf-8 status) " ") headers (read-json in))))

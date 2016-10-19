@@ -6,9 +6,9 @@
 
 (define environment%
   (class object%
-    (init json)                
+    (init init-name json)                
 
-    (define name (hash-ref json 'name))
+    (define name init-name)
     (define use-by-default (hash-ref json 'use-by-default #f))
     (define initial-path (hash-ref json 'initial-path))
     (define authors (hash-ref json 'authors))

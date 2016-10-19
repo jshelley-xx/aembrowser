@@ -1,5 +1,5 @@
 {
-	"name": "localhost",
+	"use-by-default": true,
 	"initial-path": "/content/geometrixx/en/products/triangle",
 	"authors": [{"host": "localhost", "port": 4502, "user": "admin", "password": "admin"}],
 	"publishers": [{"host": "localhost", "port": 4503, "user": "admin", "password": "admin"}]

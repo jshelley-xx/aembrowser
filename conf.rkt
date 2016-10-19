@@ -59,7 +59,9 @@
   (define conf-files (load-conf-files "environments"))
   (define environments (make-hash))
   (for ([(k v) conf-files])
-    (hash-set! environments k (new environment% [json v])))
+    (hash-set! environments k (new environment%
+                                   [init-name k]
+                                   [json v])))
   environments)
 
 

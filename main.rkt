@@ -7,6 +7,7 @@
          "session.rkt"
          "formatting.rkt"
          typed-stack
+         net/sendurl
          )
 
 
@@ -101,7 +102,7 @@
          [alignment '(left top)]))
   
   (define info-bar
-    (new vertical-panel%
+    (new horizontal-panel%
          [parent result-panel]
          [alignment '(left top)]
          [min-height 10]
@@ -119,6 +120,16 @@
          [stretchable-width #f]))
 
 
+  (new button% [parent info-bar]
+       [label "crx/de"]
+       [callback
+        (lambda (button event)
+          (send-url
+           (string-append "http://" (hash-ref server 'host) ":" (number->string (hash-ref server 'port)) "/crx/de/index.jsp#" path)
+          #t))])
+
+
+  
   (define list-context-menu
     (new popup-menu%	 
          [title "Options"]))
@@ -149,7 +160,7 @@
     (define push-path-option
       (new menu-item%
          [parent list-context-menu]
-         [label "Go here!"]
+         [label "Jump!"]
          [callback
           (lambda (cmp evt)
             (let*
@@ -160,11 +171,7 @@
               (let-values
                   ([(authors-panel publishers-panel) (new-results-panel bottom-panel next-path)])
                 (show-results-for-path bottom-panel next-path)
-                (push-path next-path authors-panel publishers-panel path-stack))))
-            
-
-            ]
-         ))
+                (push-path next-path authors-panel publishers-panel path-stack))))]))
 
   (define copy-submenu
       (new menu%
@@ -317,13 +324,16 @@
 
 
 (define (select-default-environment environments)
-  (unless
-      (for/or ([(k v) environments]
-             #:when (send v get-use-by-default))
-        v)
-    (for/or ([(k v) environments])
-      v)
-    ))
+  (let
+      ([possible-default
+        (for/or ([(k v) environments]
+                 #:when (send v get-use-by-default))
+          v)])
+    (if possible-default
+        possible-default
+        (for/or ([(k v) environments])
+          v)
+        )))
 
 
 
@@ -338,6 +348,12 @@
 
 (define (go)
   (define environments (load-environments))
+  (define default-environment (select-default-environment environments))
+  (define environment-keys (sort (hash-keys environments) string<?))
+
+  
+
+  
   
 
   
@@ -407,11 +423,6 @@
     (new vertical-panel% [parent top-panel]
          [alignment '(left top)]))
   
-
-  
-  
-  
-  
   
   (define start-at
     (new text-field%
@@ -421,11 +432,22 @@
          [min-width 600]
          [stretchable-width #f]))
 
+
+
+  
+  
+
+
+  
   (define environment-dropdown
     (new choice%
          [parent environment-row]
          [label "Environment: "]
-         [choices (hash-keys environments)]
+         [selection (or (for/or ([k (in-naturals)]
+                             [key environment-keys]
+                             #:when (equal? key (send default-environment get-name)))
+                      k) 0)]
+         [choices environment-keys]
          [callback
           (lambda (cmp event)
             (let*
@@ -444,10 +466,10 @@
 
   
   
-  (new-session (select-default-environment environments) start-at path-stack bottom-panel)
+  (new-session default-environment start-at path-stack bottom-panel)
   
   (new button% [parent start-at-panel]
-       [label "Navigate to Path"]
+       [label "Go to Path"]
        [callback
         (lambda (button event)
           (let*

@@ -1,5 +1,4 @@
 {
-	"auto-add-jcrcontent": ["/content", "/etc"],
 	"suppress-fields": [ 
 			"jcr:createdBy", 
 			"jcr:created", 
